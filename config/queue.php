@@ -93,6 +93,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Named Queues
+    |--------------------------------------------------------------------------
+    |
+    | Define application-specific queue names here. These are used by jobs
+    | and workers to separate orders, notifications, and reports processing.
+    |
+    */
+
+    'queues' => [
+        'orders' => env('QUEUE_ORDERS', 'orders'),
+        'notifications' => env('QUEUE_NOTIFICATIONS', 'notifications'),
+        'reports' => env('QUEUE_REPORTS', 'reports'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Job Batching
     |--------------------------------------------------------------------------
     |

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Jobs\ProcessOrderPostActions;
 use App\Services\OrderService;
 
 class OrderController extends Controller
@@ -16,8 +17,10 @@ class OrderController extends Controller
 
     public function checkout(Request $request)
     {
-        return response()->json(
-            $this->orderService->checkout($request->user())
-        );
+        $order = $this->orderService->checkout($request->user());
+
+        ProcessOrderPostActions::dispatch($order);
+
+        return response()->json($order);
     }
 }

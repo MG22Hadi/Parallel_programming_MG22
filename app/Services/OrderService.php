@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Cart;
 use App\Models\Product;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class OrderService
@@ -38,6 +39,7 @@ class OrderService
 
                 $product->stock -= $item->quantity;
                 $product->save();
+                Cache::forget("product:#{$product->id}");
 
                 $total += $product->price * $item->quantity;
 

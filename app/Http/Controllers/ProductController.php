@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
@@ -58,8 +59,12 @@ class ProductController extends Controller
     /**
      * Display the specified product
      */
-    public function show(Product $product)
+    public function show($id)
     {
+        $product = Cache::remember("product:#{$id}", 3600, function () use ($id) {
+            return Product::findOrFail($id);
+        });
+
         return response()->json($product);
     }
 
@@ -75,6 +80,7 @@ class ProductController extends Controller
         ]);
 
         $product->update($validated);
+        Cache::forget("product:#{$product->id}");
 
         return response()->json([
             'message' => 'Product updated successfully',
@@ -88,6 +94,7 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         $product->delete();
+        Cache::forget("product:#{$product->id}");
 
         return response()->json([
             'message' => 'Product deleted successfully',
