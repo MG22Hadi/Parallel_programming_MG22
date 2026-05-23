@@ -39,7 +39,7 @@ class OrderService
 
                 $product->stock -= $item->quantity;
                 $product->save();
-                Cache::forget("product:#{$product->id}");
+                Cache::forget("product:{$product->id}");
 
                 $total += $product->price * $item->quantity;
 
