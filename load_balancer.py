@@ -37,7 +37,7 @@ class ThreadingHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 
 class ReverseProxyHandler(http.server.BaseHTTPRequestHandler):
-    protocol_version = "HTTP/1.1"
+    protocol_version = "HTTP/1.0"
 
     def do_GET(self):
         self.proxy_request()
@@ -83,17 +83,28 @@ class ReverseProxyHandler(http.server.BaseHTTPRequestHandler):
             response = connection.getresponse()
 
             self.send_response(response.status, response.reason)
+            response_body = response.read()
+            content_length_sent = False
+
             for name, value in response.getheaders():
                 if name.lower() in HOP_BY_HOP_HEADERS:
                     continue
                 if name.lower() == "transfer-encoding" and value.lower() == "chunked":
                     continue
+                if name.lower() == "content-length":
+                    content_length_sent = True
                 self.send_header(name, value)
+
+            if not content_length_sent and response_body is not None:
+                self.send_header("Content-Length", str(len(response_body)))
+
+            self.send_header("Connection", "close")
             self.end_headers()
 
-            response_body = response.read()
             if response_body:
                 self.wfile.write(response_body)
+            self.wfile.flush()
+            self.close_connection = True
 
             log_msg = f"[Request #{request_number}] Forwarded to Server {target_port} -> {self.command} {forwarded_path}"
             print(log_msg, flush=True)

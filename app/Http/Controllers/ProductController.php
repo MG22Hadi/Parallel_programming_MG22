@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\ProductCacheService;
+use App\Services\ProductOptimisticService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
@@ -61,15 +63,11 @@ class ProductController extends Controller
     /**
      * Display the specified product
      */
-    public function show($id)
+    public function show($id, ProductCacheService $cacheService)
     {
         DB::enableQueryLog();
 
-        $product = Cache::remember("product:{$id}", 600, function () use ($id) {
-            Log::info("DB QUERY for product {$id}");
-
-            return Product::find($id)?->toArray();
-        });
+        $product = $cacheService->findById($id);
 
         Log::info(DB::getQueryLog());
 
@@ -93,6 +91,23 @@ class ProductController extends Controller
         return response()->json([
             'message' => 'Product updated successfully',
             'product' => $product,
+        ]);
+    }
+
+    public function decrementStockOptimistic(Request $request, $id, ProductOptimisticService $service)
+    {
+        $validated = $request->validate([
+            'quantity' => 'sometimes|integer|min:1',
+        ]);
+
+        $quantity = $validated['quantity'] ?? 1;
+
+        $result = $service->decrementStock($id, $quantity, 5);
+
+        return response()->json([
+            'message' => 'Product stock decremented optimistically',
+            'attempts' => $result['attempts'],
+            'product' => $result['product'],
         ]);
     }
 

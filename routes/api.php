@@ -10,7 +10,8 @@ use App\Http\Controllers\OrderController;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/products', [ProductController::class, 'index']); // Public product listing
-Route::get('/products/{product}', [ProductController::class, 'show']); // Public product view
+Route::get('/products/{id}', [ProductController::class, 'show']); // Public product view
+Route::post('/buy/{id}', [ProductController::class, 'decrementStockOptimistic']); // Optimistic stock test endpoint
 
 // Protected routes (authentication required)
 Route::middleware('auth:sanctum')->group(function () {
@@ -19,6 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Product management (admin)
     Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{product}', [ProductController::class, 'update']);
+    Route::post('/products/{id}/decrement-stock', [ProductController::class, 'decrementStockOptimistic']);
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
     
     // Cart operations
