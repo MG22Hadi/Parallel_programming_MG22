@@ -65,6 +65,13 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'stress' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/stress.log'),
+            'level' => env('LOG_STRESS_LEVEL', 'warning'),
+            'replace_placeholders' => true,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

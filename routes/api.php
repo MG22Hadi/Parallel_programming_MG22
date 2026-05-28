@@ -3,10 +3,17 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 
 // Public routes (no authentication required)
+Route::get('/health', [HealthController::class, 'health']);
+Route::get('/queue-status', [HealthController::class, 'queueStatus']);
+Route::get('/metrics', [HealthController::class, 'metrics']);
+Route::get('/queue-health', [HealthController::class, 'queueHealth']);
+Route::get('/db-health', [HealthController::class, 'dbHealth']);
+Route::get('/system-health', [HealthController::class, 'systemHealth']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/products', [ProductController::class, 'index']); // Public product listing

@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "perf:checkout": "k6 run tests/performance/checkout.js"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
