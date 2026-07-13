@@ -6,68 +6,53 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Cart;
 use App\Models\Product;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class OrderService
 {
     public function checkout($user)
     {
-        return DB::transaction(function () use ($user) {
-            $cart = Cart::where('user_id', $user->id)
-                ->lockForUpdate()
-                ->with('items.product')
-                ->first();
+        $cart = Cart::where('user_id', $user->id)
+            ->with('items.product')
+            ->first();
 
-            if (!$cart || $cart->items->isEmpty()) {
-                throw new \Exception("Cart is empty");
-            }
+        if (!$cart || $cart->items->isEmpty()) {
+            throw new \Exception("Cart is empty");
+        }
 
-            $total = 0;
-            $orderItems = [];
+        $total = 0;
 
-            foreach ($cart->items as $item) {
-                $product = Product::lockForUpdate()->find($item->product_id);
+        // ❌ بدون Lock
+        // ❌ بدون Transaction
+        foreach ($cart->items as $item) {
+            $product = $item->product;
 
-                if (!$product) {
-                    throw new \Exception("Product not found");
-                }
+            // ❌ Race Condition هنا - لا تحقق من المخزون
+            $product->stock -= $item->quantity;
+            $product->save();
 
-                if ($product->stock < $item->quantity) {
-                    throw new \Exception("Insufficient stock for product ID {$product->id}");
-                }
+            $total += $product->price * $item->quantity;
+        }
 
-                $product->stock -= $item->quantity;
-                $product->save();
-                Cache::forget("product:{$product->id}");
+        // إنشاء الطلب
+        $order = Order::create([
+            'user_id' => $user->id,
+            'total_price' => $total,
+            'status' => 'pending'
+        ]);
 
-                $total += $product->price * $item->quantity;
-
-                $orderItems[] = [
-                    'product_id' => $item->product_id,
-                    'quantity' => $item->quantity,
-                    'price' => $product->price,
-                ];
-            }
-
-            $order = Order::create([
-                'user_id' => $user->id,
-                'total_price' => $total,
-                'status' => 'pending',
+        // إضافة العناصر
+        foreach ($cart->items as $item) {
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $item->product_id,
+                'quantity' => $item->quantity,
+                'price' => $item->product->price
             ]);
+        }
 
-            foreach ($orderItems as $orderItem) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $orderItem['product_id'],
-                    'quantity' => $orderItem['quantity'],
-                    'price' => $orderItem['price'],
-                ]);
-            }
+        // حذف السلة
+        $cart->items()->delete();
 
-            $cart->items()->delete();
-
-            return $order;
-        });
+        return $order;
     }
 }

@@ -11,6 +11,6 @@ export const options = {
 };
 
 export default function () {
-  http.get('http://127.0.0.1:8080/api/products');
+  http.get('http://127.0.0.1:8000/api/products');
   sleep(1);
 }
